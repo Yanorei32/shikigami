@@ -51,7 +51,7 @@ void pca9685_init(int fd) {
 	usleep(500);
 }
 
-void pca9685_set_pwm_freq_with_finetune(int fd, unsigned int freq, int tune) {
+double pca9685_set_pwm_freq(int fd, unsigned int freq) {
 	auto mode1 = i2c_smbus_read_byte_data(fd, ADDR_MODE1);
 	unsigned char prescale_reg_value;
 
@@ -60,24 +60,18 @@ void pca9685_set_pwm_freq_with_finetune(int fd, unsigned int freq, int tune) {
 	i2c_smbus_write_byte_data(
 		fd,
 		ADDR_PRESCALE,
-		prescale_reg_value = std::round( ((double)OSC_FREQ) / (RESOLUTION * freq) ) - 1 + tune
+		prescale_reg_value = std::round( ((double)OSC_FREQ) / (RESOLUTION * freq) ) - 1
 	);
 
-#ifdef SHOW_PCA9685_TRUE_FREQ
 	auto true_freq = ( (double)OSC_FREQ ) / ( (prescale_reg_value + 1) * RESOLUTION );
-
-	std::cerr << "hw freq: " << true_freq << " Hz" << std::endl;
-#endif
 
 	i2c_smbus_write_byte_data(fd, ADDR_MODE1, mode1);
 
 	usleep(500);
 
 	i2c_smbus_write_byte_data(fd, ADDR_MODE1, mode1 | FLAG_MODE1_RESTART);
-}
 
-void pca9685_set_pwm_freq(int fd, unsigned int freq) {
-	pca9685_set_pwm_freq_with_finetune(fd, freq, 0);
+	return true_freq; 
 }
 
 void pca9685_set_pulse_us(int fd, unsigned int pwm_freq, int channel, double pulse_us) {
